@@ -5,7 +5,7 @@
 #include "Level.h"
 #include "Actor.h"
 #include <string>
-#include <vector>
+#include <list>
 
 
 
@@ -23,15 +23,27 @@ public:
   virtual int move();
   virtual void cleanUp();
   virtual ~StudentWorld();
-  bool overlap(double x, double y, char dir);
-
+ 
   // object at position x, y
+
+   bool overlap(double x, double y, bool shouldBonk);
+   bool overlapGoomba(double x, double y, bool shouldBonk, char dir);
+   bool overlapWithPeach(double x, double y, char object);
+   bool overlapWithPowerup(double x, double y, char goodie);
+
   bool objectCanBlock();
+  void introduceNewObject(Actor* a);
+  bool checkPower(char goodie);
+  void changePower(bool b, char goodie);
+  void changeInvincibility(int i);
+  void changeHP(int i);
+  void peachBonk();
 
 private:
-	std::vector<Actor*> myActors;
+	std::list<Actor*> myActors;
 	Peach* m_peach;
 	StudentWorld* studentWorld;
+	bool m_levelOver;
 };
 
 #endif // STUDENTWORLD_H_
