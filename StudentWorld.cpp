@@ -1,6 +1,10 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
 #include <string>
+#include <iostream> // defines the overloads of the << operator
+#include <sstream>  // defines the type std::ostringstream
+#include <iomanip>  // defines the manipulator setw
+#include <cstdlib>
 using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
@@ -13,14 +17,23 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
-    std::vector<Actor> myActors;
+    std::list<Actor*> myActors;
+    m_levelOver = false;
+    m_peach = nullptr;
 }
 
 int StudentWorld::init()
 {
    
     Level lev(assetPath());
-    string level_file = "level01.txt";
+
+    ostringstream leveloss;
+    leveloss << "level";
+    leveloss.fill('0');
+    leveloss << setw(2) << getLevel();
+    leveloss << ".txt";
+
+    string level_file = leveloss.str();
     Level::LoadResult result = lev.loadLevel(level_file);
     if (result == Level::load_fail_file_not_found)
         return GWSTATUS_LEVEL_ERROR;
@@ -32,6 +45,7 @@ int StudentWorld::init()
         for (int x = 0; x < 32; x++) {
             for (int y = 0; y < 32; y++) {
                 ge = lev.getContentsOf(x, y);
+                int randDir = (randInt(0, 1)) * 180;
                 switch (ge)
                 {
                 case Level::empty:
@@ -42,12 +56,36 @@ int StudentWorld::init()
                     break;
 
                 case Level::block:
-                    myActors.push_back(new Block(IID_BLOCK, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 2, 1, this));
+                    myActors.push_back(new Block(IID_BLOCK, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 2, 1,0,this));
                     break;
+
+                case Level::flower_goodie_block:
+                    myActors.push_back(new Block(IID_BLOCK, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 2, 1,1, this));
+                    break;
+
+                case Level::pipe:
+                    myActors.push_back(new Pipe(IID_PIPE, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 2, 1, this));
+                    break;
+
+                case Level::goomba:
+                    myActors.push_back(new Goomba(IID_GOOMBA, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, randDir, 0, 1, this));
+                    break;
+
+                case Level::flag:
+                    myActors.push_back(new Flag(IID_FLAG, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, this));
+                    break;
+
+                case Level::mushroom_goodie_block:
+                    myActors.push_back(new Block(IID_BLOCK, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 2, 1, 2, this));
+                    break;
+                 case Level::star_goodie_block:
+                     myActors.push_back(new Block(IID_BLOCK, x * SPRITE_WIDTH, y * SPRITE_HEIGHT, 0, 1, 1, 3, this));
+                     break;
+
                 }
             }
         }
-     
+
     }
 
     return GWSTATUS_CONTINUE_GAME;
@@ -65,10 +103,11 @@ int StudentWorld::move()
     //decLives();
     //return GWSTATUS_PLAYER_DIED;
 
-    // iterate through vector and have each actor doSomething()
-    vector<Actor*> ::iterator it;
+    // iterate through list and have each actor doSomething()
+    list<Actor*> ::iterator it;
     it = myActors.begin();
-   
+
+    m_peach->doSomething();
     while (it != myActors.end()) {
 
         if ((*it)->isAlive()) {
@@ -78,24 +117,73 @@ int StudentWorld::move()
             // if peach died during this tick
             if (!m_peach->isAlive()) {
                 playSound(SOUND_PLAYER_DIE);
+                decLives();
                 return GWSTATUS_PLAYER_DIED;
-    
+
+            }
+
+            // if peach has reached a flag          
+            if (m_levelOver == true) {
+                playSound(SOUND_FINISHED_LEVEL);
+                return GWSTATUS_FINISHED_LEVEL;
             }
 
             // if peach reached mario
-            // if peach has reached a flag
 
+            it++;
         }
 
-        it++;
+        else {
+            Actor* temp;
+            temp = (*it);
+            it = myActors.erase(it);
+            delete temp;
+            temp = nullptr;
+        }
+
+       
     }
 
-    m_peach->doSomething();
+   
 
     // Remove dead actors
-    // Update game status line
-    
-    
+    //for (auto itr = myActors.begin(); itr != myActors.end(); itr++) {
+    //    if (!(*itr)->isAlive()) {
+    //        delete* itr;
+    //        myActors.erase(itr);
+    //        itr = myActors.begin();
+    //    }
+    //}
+
+
+
+    // Update status text on top of the screen
+    ostringstream oss;
+    oss << "Lives: " << getLives() << "  ";
+
+    oss << "Level: ";
+    oss.fill('0');
+    oss << setw(2) << getLevel() << "  ";
+    oss << "Points: ";
+    oss << setw(6) << getScore() << " ";
+
+    if (m_peach->checkInvincibility()) {
+        oss << "StarPower! ";
+    }
+
+    if (checkPower('f')) {
+        oss << "ShootPower! ";
+    }
+
+    if (checkPower('m')) {
+        oss << "JumpPower! ";
+    }
+
+
+    // still need to implement adding "Shootpower! JumpPower! etc. "
+    string s = oss.str();
+    setGameStatText(s);
+
     // continue playing the current level
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -103,7 +191,9 @@ int StudentWorld::move()
 void StudentWorld::cleanUp()
 {
     delete m_peach;
-    vector<Actor*> ::iterator it;
+    m_peach = nullptr;
+    m_levelOver = false;
+    list<Actor*> ::iterator it;
     it = myActors.begin();
 
     while (it != myActors.end()) {
@@ -114,72 +204,18 @@ void StudentWorld::cleanUp()
     }
 }
 
-                       //  
-bool StudentWorld::overlap(double x, double y, char dir) {
-    vector<Actor*> ::iterator it;
-    it = myActors.begin();
-
-    // iterate through all actors
-    while (it != myActors.end()) {
-      
-        // if (*it) is on the left hand side of object calling this function
-        if (dir == 'l') {
-            if (x <= (*it)->getX() + SPRITE_WIDTH  && x >= (*it)->getX()  &&  y >= (*it)->getY() && y <= (*it)->getY() + SPRITE_HEIGHT - 1 ) {
-                std::cout << "Blocked by left";
-                return true;
-            }
-        }
-
-        // if (*it) is on the right hand side of object calling this function
-        else if (dir == 'r') {
- 
-
-            if (x + SPRITE_WIDTH >= (*it)->getX() && x + SPRITE_WIDTH <= (*it)->getX() + SPRITE_WIDTH - 1 && y >= (*it)->getY() && y <= (*it)->getY() + SPRITE_HEIGHT - 1) {
-                return true;
-            }
-
-        }
-
-
-        // if (*it) blocks movement  if it overlaps with targetx and target y
-        else if (dir == 'm') {
-
-            if (  ((x >= (*it)->getX()  && x <= (*it)-> getX() + SPRITE_WIDTH - 1) || (x + SPRITE_WIDTH - 1 >= (*it)->getX() && x + SPRITE_WIDTH - 1 <= (*it)->getX() + SPRITE_WIDTH - 1) ) 
-                && y + SPRITE_HEIGHT - 1 >= (*it)->getY() && y + SPRITE_HEIGHT - 1 <= (*it)->getY() + SPRITE_HEIGHT - 1 ) {
-                if ((*it)->blocksMovement()) {
-                    return true;
-                }
-            }
-        }
-       
-
-        // if any three pixels below (*it) blocks movement
-        else if (dir == 'c') {
-     
-            if (((x >= (*it)->getX() && x <= (*it)->getX() + SPRITE_WIDTH - 1) || (x + SPRITE_WIDTH - 1 >= (*it)->getX() && x + SPRITE_WIDTH - 1 <= (*it)->getX() + SPRITE_WIDTH - 1)) 
-                && y <= (*it)->getY() + SPRITE_HEIGHT + 2 && y >= (*it)->getY() + SPRITE_HEIGHT - 1) {
-                return true;
-            }
-        }
-
-        it++;
-    }
-    return false;
-}
-
-
 // if there is an object that would block one pixel below
 bool StudentWorld::objectCanBlock() {
     
     double x = m_peach->getX();
     double y = m_peach->getY();
 
-    vector<Actor*>::iterator it;
+    list<Actor*>::iterator it;
     it = myActors.begin();
     while (it != myActors.end()) {
         // should encompass a range of x values and a range of y values
 
-        if (x >= (*it)->getX() && x <= (*it)->getX() + SPRITE_WIDTH - 1) {
+        if ((x >= (*it)->getX() && x <= (*it)->getX() + SPRITE_WIDTH - 1) || (x + SPRITE_WIDTH - 1 >= (*it)->getX() && x + SPRITE_WIDTH - 1 <= (*it)->getX() + SPRITE_WIDTH - 1)) {
             if (y <= (*it)->getY() + SPRITE_HEIGHT && y >= (*it)->getY()) {
                 if ((*it)->blocksMovement()) {
                     return true;
@@ -192,3 +228,244 @@ bool StudentWorld::objectCanBlock() {
 
     return false;
 }
+
+void StudentWorld::introduceNewObject(Actor* a) {
+  myActors.push_back(a);
+}
+
+void StudentWorld::changePower(bool b, char goodie) {
+
+    switch (goodie) {
+    case 'f':
+        m_peach->changePower(b, 'f');
+        break;
+    case 'm':
+        m_peach->changePower(b, 'm');
+        break;
+    case 's':
+        m_peach->changePower(b, 's');
+    }
+
+   
+}
+
+bool StudentWorld::checkPower(char goodie) {
+
+    switch (goodie) {
+    case 'f':
+        if (m_peach->checkPower('f') == true) {
+            return true;
+        }
+        return false;
+        break;
+    case 'm':
+        if (m_peach->checkPower('m') == true) {
+            return true;
+        }
+        return false;
+        break;
+    case 's':
+        if (m_peach->checkInvincibility() == true) {
+            return true;
+        }
+        return false;
+        break;
+    }
+
+}
+
+void StudentWorld::changeInvincibility(int i) {
+    m_peach->changeInvincibility(i);
+}
+
+void StudentWorld::changeHP(int i) {
+    m_peach->changeHP(i);
+}
+
+void StudentWorld::peachBonk() {
+    m_peach->bonk();
+}
+
+
+bool StudentWorld::overlap(double x, double y, bool shouldBonk) {
+
+    list<Actor*>::iterator it;
+    it = myActors.begin();
+    while (it != myActors.end()) {
+      
+        if ((*it)->getX() == x && (*it)->getY() == y) {
+            continue;
+        }
+
+        if (x + SPRITE_WIDTH - 1 > (*it)->getX() && x < (*it)->getX() + SPRITE_WIDTH - 1 
+            && (*it)->getY() < y + SPRITE_HEIGHT - 1 && y < (*it)->getY() + SPRITE_HEIGHT - 1) {
+
+
+            if ((*it)->blocksMovement()) {
+
+                if (shouldBonk == true) {
+                    (*it)->bonk();
+                }
+
+                return true;
+            }
+
+            else {
+                if (shouldBonk == true) {
+                    (*it)->bonk();
+                }
+                return false;
+            }
+
+
+        }
+
+        it++;
+    }
+
+    return false;
+
+
+}
+
+bool StudentWorld::overlapGoomba(double x, double y, bool shouldBonk, char dir) {
+    list<Actor*>::iterator it;
+    it = myActors.begin();
+    while (it != myActors.end()) {
+
+        if ((*it)->getX() == x && (*it)->getY() == y) {
+            continue;
+        }
+
+        switch (dir) {
+        case 'r':
+
+            if (x + SPRITE_WIDTH - 1 > (*it)->getX() &&  x  < (*it)->getX() 
+                && (*it)->getY() < y + SPRITE_HEIGHT - 1 && y < (*it)->getY() + SPRITE_HEIGHT - 1 ) {
+
+
+
+
+                if ((*it)->blocksMovement()) {
+
+                    if (shouldBonk == true) {
+                        (*it)->bonk();
+                    }
+
+                    return true;
+                }
+
+                else {
+                    if (shouldBonk == true) {
+                        (*it)->bonk();
+                    }
+                    return false;
+                }
+
+                return true;
+
+            }
+            break;
+            
+        case 'l':
+            if (x > (*it)->getX() && x < (*it)->getX() + SPRITE_WIDTH - 1
+                && (*it)->getY() < y + SPRITE_HEIGHT - 1 && y < (*it)->getY() + SPRITE_HEIGHT - 1) {
+
+
+
+
+                if ((*it)->blocksMovement()) {
+
+                    if (shouldBonk == true) {
+                        (*it)->bonk();
+                    }
+
+                    return true;
+                }
+
+                else {
+                    if (shouldBonk == true) {
+                        (*it)->bonk();
+                    }
+                    return false;
+                }
+
+                return true;
+
+            }
+            break;
+
+
+        }
+
+
+        it++;
+    }
+
+    return false;
+
+}
+
+
+bool StudentWorld::overlapWithPeach(double x, double y, char object) {
+    if (x + SPRITE_WIDTH - 1 > m_peach->getX() && x < m_peach->getX() + SPRITE_WIDTH - 1 
+        && m_peach->getY() < y + SPRITE_HEIGHT - 1 && y < m_peach->getY() + SPRITE_HEIGHT - 1) {
+
+        switch (object) {
+        
+        // if peach overlaps with flag
+        case 'f':
+            m_levelOver = true;
+            return true;
+            break;
+
+
+        default: 
+            return true;
+
+        }
+
+
+       }
+
+    return false;
+}
+
+bool StudentWorld::overlapWithPowerup(double x, double y, char goodie) {
+
+    list<Actor*>::iterator it;
+    it = myActors.begin();
+    while (it != myActors.end()) {
+
+        switch (goodie) {
+        case 'f':
+
+            if (x + SPRITE_WIDTH - 1 > (*it)->getX() && x < (*it)->getX() + SPRITE_WIDTH - 1 && (*it)->getY() < y + SPRITE_HEIGHT - 1 && y < (*it)->getY() + SPRITE_HEIGHT - 1) {
+
+                if ((*it)->isDamageable()) {
+                    (*it)->attemptToDamage();
+                    return true;
+                }
+            }
+            break;
+
+        case 'm':
+        case 's':
+
+            if (x + SPRITE_WIDTH - 1 > (*it)->getX() && x < (*it)->getX() + SPRITE_WIDTH - 1 && (*it)->getY() < y + SPRITE_HEIGHT - 1 && y < (*it)->getY() + SPRITE_HEIGHT - 1) {
+
+                if ((*it)->isDamageable()) {
+                    (*it)->attemptToDamage();
+                    return true;
+                }
+            }
+            break;
+        }
+
+        it++;
+    }
+
+    return false;
+
+}
+
