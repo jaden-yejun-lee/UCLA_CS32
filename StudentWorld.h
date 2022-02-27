@@ -11,7 +11,6 @@
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
-class Block;
 class Peach;
 class Actor;
 
@@ -32,18 +31,25 @@ public:
    bool overlapWithPowerup(double x, double y, char goodie);
 
   bool objectCanBlock();
+  bool overlapPlatform(double x, double y, char dir);
   void introduceNewObject(Actor* a);
   bool checkPower(char goodie);
   void changePower(bool b, char goodie);
   void changeInvincibility(int i);
   void changeHP(int i);
   void peachBonk();
+  bool fall(double x, double y, double ex, double ey, bool shouldBonk);
+  bool overlapPiranha(double x, double y);
+  bool setPiranhaDirection(double x, double y);
+  bool distanceBetweenPiranhaPeach(double x, double y);
 
 private:
 	std::list<Actor*> myActors;
 	Peach* m_peach;
 	StudentWorld* studentWorld;
 	bool m_levelOver;
+	bool m_gameOver;
 };
 
 #endif // STUDENTWORLD_H_
+
