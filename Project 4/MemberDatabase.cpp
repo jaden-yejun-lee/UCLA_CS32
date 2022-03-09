@@ -76,7 +76,7 @@ bool MemberDatabase::LoadDatabase(string filename) {
 						else {
 							itr->push_back(email);
 						}
-						cerr << "Name: " << name << ", Email: " << email << ", Number: " << numPairs << ", Attribute: " << attribute << ", Value: " << value << endl;
+						// cerr << "Name: " << name << ", Email: " << email << ", Number: " << numPairs << ", Attribute: " << attribute << ", Value: " << value << endl;
 					}
 
 
@@ -100,7 +100,7 @@ bool MemberDatabase::LoadDatabase(string filename) {
 							else {
 								itr->push_back(email);
 							}
-							cerr << "Name: " << name << ", Email: " << email << ", Number: " << numPairs << ", Attribute: " << attribute << ", Value: " << value << endl;
+							// cerr << "Name: " << name << ", Email: " << email << ", Number: " << numPairs << ", Attribute: " << attribute << ", Value: " << value << endl;
 
 						}
 					}
@@ -130,7 +130,7 @@ vector<string> MemberDatabase::FindMatchingMembers(const AttValPair& input) cons
 	vector <string>* test = memberVector.search(pair);
 		for (int i = 0; i < (*test).size(); i++) {
 
-			cerr << (*memberVector.search(pair))[i] << endl;
+		//	cerr << (*memberVector.search(pair))[i] << endl;
 		}
 
 		return *memberVector.search(pair);	
@@ -141,7 +141,7 @@ const PersonProfile* MemberDatabase::GetMemberByEmail(string email) const {
 	if ((m_emails.search(email)) == nullptr) {
 		return nullptr;
 	}
-	cerr << (m_emails.search(email))->GetName();
+	// cerr << (m_emails.search(email))->GetName();
 
 	return (m_emails.search(email));
 
