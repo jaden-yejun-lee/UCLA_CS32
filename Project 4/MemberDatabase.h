@@ -1,5 +1,5 @@
-#ifndef _MEMBERDATABASE_H
-#define _MEMBERDATABASE_H
+#ifndef _MEMBERDATABASE_H_
+#define _MEMBERDATABASE_H_
 
 #include "provided.h"
 #include "PersonProfile.h"
@@ -23,6 +23,8 @@ private:
 	RadixTree<PersonProfile> m_emails;
 	RadixTree<vector<string>> memberVector;
 };
+
+
 
 #endif
  
