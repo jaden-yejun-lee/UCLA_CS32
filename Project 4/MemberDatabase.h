@@ -20,7 +20,7 @@ public:
 
 
 private:
-	RadixTree<PersonProfile> m_emails;
+	RadixTree<PersonProfile*> m_emails;
 	RadixTree<vector<string>> memberVector;
 };
 
