@@ -23,9 +23,8 @@ public:
 private:
 	string m_name;
 	string m_email;
-	RadixTree<vector<string>> m_tree;	
+	RadixTree<string> m_tree;	
 	vector<AttValPair> m_personVector;
-
 };
 
 #endif
