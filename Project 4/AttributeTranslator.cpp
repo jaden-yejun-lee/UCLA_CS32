@@ -2,7 +2,7 @@
 #include "RadixTree.h"
 #include "AttributeTranslator.h"
 #include "MatchMaker.h"
-#include "MemberDataBase.h"
+#include "MemberDatabase.h"
 
 #include <string>
 #include <vector>
@@ -43,17 +43,20 @@ bool AttributeTranslator::Load(string filename) {
 			sourcePair = sourceAttribute + "," + sourceValue;
 			AttValPair compatible(compatibleAttribute, compatibleValue);
 
-			auto itr = compatiblePairs.search(sourcePair);
+			vector<AttValPair>* ptr = compatiblePairs.search(sourcePair);
 
-			if (itr == nullptr) {
+			if (ptr == nullptr) {
 				vector <AttValPair> temp;
 				temp.push_back(compatible);
 				compatiblePairs.insert(sourcePair, temp);
-				cerr << sourcePair << ": " << compatibleAttribute << ", " << compatibleValue << endl;
+				// cerr << sourcePair << ": " << compatibleAttribute << ", " << compatibleValue << endl;
 			}
 			else {
-				itr->push_back(compatible);
-				cerr << sourcePair << ": " << compatibleAttribute << ", " << compatibleValue << endl;
+				auto it = find((*ptr).begin(), (*ptr).end(), compatible);
+				if (it == (*ptr).end()) {
+					(*ptr).push_back(compatible);
+					// cerr << sourcePair << ": " << compatibleAttribute << ", " << compatibleValue << endl;
+				}
 			}
 
 		}
@@ -62,8 +65,8 @@ bool AttributeTranslator::Load(string filename) {
 	else {
 		return false;
 	}
-		
-	
+
+
 }
 
 vector<AttValPair> AttributeTranslator::FindCompatibleAttValPairs(const AttValPair& source) const {
@@ -71,10 +74,18 @@ vector<AttValPair> AttributeTranslator::FindCompatibleAttValPairs(const AttValPa
 
 
 	vector <AttValPair>* test = compatiblePairs.search(pair);
-	for (int i = 0; i < (*test).size(); i++) {
 
-		cerr << (*compatiblePairs.search(pair))[i].attribute << ", " << (*compatiblePairs.search(pair))[i].value << endl;
+	if (test == nullptr) {
+		vector<AttValPair> empty;
+		// cerr << "Nothing" << endl;
+		return empty;
 	}
+	else {
+		for (int i = 0; i != (*test).size(); i++) {
 
-	return *compatiblePairs.search(pair);
+		//  cerr << (*compatiblePairs.search(pair))[i].attribute << ", " << (*compatiblePairs.search(pair))[i].value << endl;
+		}
+		return *compatiblePairs.search(pair);
+	}
+	
 }
