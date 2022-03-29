@@ -5,15 +5,13 @@
 #include <sstream>
 
 MemberDatabase::MemberDatabase() {
-
+	
 }
 
 MemberDatabase::~MemberDatabase() {
-
+	
 }
 
-// BETTER THAN O(P + M) time where P is the total number of distinct attribute-value pairs
-// And M is the number of members that have the searched for attribute-value pair
 
 bool MemberDatabase::LoadDatabase(string filename) {
 	
@@ -27,6 +25,7 @@ bool MemberDatabase::LoadDatabase(string filename) {
 		string pair;
 		string attribute;
 		string value;
+		vector<AttValPair> v;
 		int numPairs = 0;
 		int lineNum = 1;
 		while (getline(file, curLine)) {
@@ -39,8 +38,8 @@ bool MemberDatabase::LoadDatabase(string filename) {
 				
 				switch (lineNum) {
 				case 0:
-					break;
 					lineNum++;
+					break;
 				case 1:
 					name = curLine;
 					lineNum++;
@@ -54,18 +53,15 @@ bool MemberDatabase::LoadDatabase(string filename) {
 					lineNum++;
 					break;			
 				default: // default is rest of attribute value pairs
-					PersonProfile a(name, email);
+					PersonProfile* a = new PersonProfile(name, email);
 
 					if (numPairs > 0)
 					{
-						
 						stringstream ss(curLine);
 						getline(ss, attribute, ',');
 						getline(ss, value, '\n');
 						pair = attribute + "," + value;
-						a.AddAttValPair(AttValPair(attribute, value));
-						// my attempt to insert email into radixtree
-						
+						a->AddAttValPair(AttValPair(attribute, value));			
 						auto itr = memberVector.search(pair);
 						if (itr == nullptr) {
 							vector<string> temp;
@@ -86,12 +82,10 @@ bool MemberDatabase::LoadDatabase(string filename) {
 							getline(s, attribute, ',');
 							getline(s, value, '\n');
 							pair = attribute + "," + value;
-							a.AddAttValPair(AttValPair(attribute, value));
-							// my attempt to insert email into radixtree
+							a->AddAttValPair(AttValPair(attribute, value));
 							auto itr = memberVector.search(pair);
 							
 							if (itr == nullptr) {
-								
 								vector<string> temp;
 								temp.push_back(email);
 								memberVector.insert(pair, temp);
@@ -104,9 +98,8 @@ bool MemberDatabase::LoadDatabase(string filename) {
 
 						}
 					}
-					// duplicate emails not accounted for 
-					m_emails.insert(a.GetEmail(), a);
 
+					m_emails.insert(a->GetEmail(), a);
 					lineNum++;
 					break;
 				}
@@ -123,27 +116,32 @@ bool MemberDatabase::LoadDatabase(string filename) {
 	
 }
 
+
 vector<string> MemberDatabase::FindMatchingMembers(const AttValPair& input) const {
 	string pair = input.attribute + "," + input.value;
-	
 
+	if (memberVector.search(pair) == nullptr) {
+		cerr << "empty vector returned" << endl;
+		vector<string> empty;
+		return empty;
+	}
 	vector <string>* test = memberVector.search(pair);
-		for (int i = 0; i < (*test).size(); i++) {
-
-		//	cerr << (*memberVector.search(pair))[i] << endl;
-		}
-
-		return *memberVector.search(pair);	
+	for (int i = 0; i != (*test).size(); i++) {
+		 //cerr << (*memberVector.search(pair))[i] << endl;
+	}
+	return *memberVector.search(pair);	
 }
 
 const PersonProfile* MemberDatabase::GetMemberByEmail(string email) const {
 
 	if ((m_emails.search(email)) == nullptr) {
+		 cerr << "no member with that email - returned nullptr" << endl;
 		return nullptr;
 	}
-	// cerr << (m_emails.search(email))->GetName();
+	// cerr << "Number of AttValPairs: " << (*m_emails.search(email))->GetNumAttValPairs() << endl;
 
-	return (m_emails.search(email));
+	return (*m_emails.search(email));
 
 
 }
+
