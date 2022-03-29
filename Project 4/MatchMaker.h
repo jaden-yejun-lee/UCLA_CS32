@@ -13,8 +13,8 @@ public:
 	vector<EmailCount> IdentifyRankedMatches(string email, int threshold) const;
 
 private:
-	MemberDatabase m_mdb;
-	AttributeTranslator m_at;
+	MemberDatabase* m_mdb;
+	AttributeTranslator* m_at;
 };
 
 
