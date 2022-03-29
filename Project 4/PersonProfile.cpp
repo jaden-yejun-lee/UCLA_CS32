@@ -18,41 +18,28 @@ string PersonProfile::GetEmail() const {
 
 void PersonProfile::AddAttValPair(const AttValPair& attval) {
 
-	vector<string>* val = m_tree.search(attval.attribute);
+	m_tree.insert(attval.attribute, attval.value);
 
-	// if attribute is not there, create new attribute
-	if (val == nullptr) {
-		vector<string> tempValue;
-		tempValue.push_back(attval.value);
-		m_tree.insert(attval.attribute, tempValue);
-		m_personVector.push_back(attval);
-	}
 
-	else {
 		bool isDuplicate = false;
-		auto it = val->begin();
-		while (it != val->end()) {
-			if (attval.value == (*it)) {
+		auto it = m_personVector.begin();
+		while (it != m_personVector.end()) {
+			if (attval.attribute == (it->attribute) && attval.value == (it->value)) {
 				isDuplicate = true;
 			}
 			it++;
 		}
 
 		if (isDuplicate == false) {
-			val->push_back(attval.value);
-			m_tree.insert(attval.attribute, *val);
 			m_personVector.push_back(attval);
 		}
 
-	}
-	
-
-
 }
 
+
 int PersonProfile::GetNumAttValPairs() const {
-	// assuming that vector can distinguish between the same attribute-value pairs
-	cerr << "Number of AttValPairs: " << m_personVector.size() << endl << endl;
+
+	// cerr << "Number of AttValPairs: " << m_personVector.size() << endl << endl;
 	return m_personVector.size();
 }
 
@@ -63,30 +50,18 @@ bool PersonProfile::GetAttVal(int attribute_num, AttValPair& attval) const {
 		return false;
 	}
 
-	vector<string>* end = m_tree.search(m_personVector[attribute_num].attribute);
-	for (int i = 0; i < (*end).size(); i++) {
-		if ((*end)[i] == m_personVector[attribute_num].value) {
-			attval.attribute = m_personVector[attribute_num].attribute;
-			attval.value = (*end)[i];
-			cerr << "GetAttVal: Attribute = " << m_personVector[attribute_num].attribute << endl;
-			cerr << "GetAttVal: Value = " << m_personVector[attribute_num].value << endl << endl;
-			return true;
-		}
+	if (m_personVector[attribute_num].attribute != "" && m_personVector[attribute_num].value != "") {
+		attval = m_personVector[attribute_num];
+		// cerr << "GetAttVal: Attribute = " << m_personVector[attribute_num].attribute << endl;
+		// cerr << "GetAttVal: Value = " << m_personVector[attribute_num].value << endl << endl;
+		return true;
 	}
-
+	// cerr << "no att val pair here";
 	return false;
 
 }
 
 PersonProfile::~PersonProfile() {
-	for (int i = 0; i < m_personVector.size(); i++) {
-		cerr <<  m_personVector[i].attribute << endl;
-		cerr << m_personVector[i].value << endl << endl;
 
-	}
 }
 
-// create a radixtree which maps the attributes to a vector of values
-// create a vector with elements inside vector being radix tree attribute-value pairs
-// if i need to return size i just have to return vector size
-// and if i need to return the actual attVal pair, I can just use index to find element in vector
