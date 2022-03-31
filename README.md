@@ -11,7 +11,7 @@ These are my solutions to the UCLA CS32 Projects for Winter of 2022.
   
   HW 5: 100/100
 
------------------------
+---
 
   Project 1: 100/100 
  
